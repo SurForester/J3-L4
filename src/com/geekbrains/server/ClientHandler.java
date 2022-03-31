@@ -4,6 +4,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.util.concurrent.ExecutorService;
 
 public class ClientHandler {
     private final Server server;
@@ -17,23 +18,20 @@ public class ClientHandler {
         return nickName;
     }
 
-    public ClientHandler(Server server, Socket socket) {
+    public ClientHandler(Server server, Socket socket, ExecutorService service) {
         try {
             this.server = server;
             this.socket = socket;
             this.inputStream = new DataInputStream(socket.getInputStream());
             this.outputStream = new DataOutputStream(socket.getOutputStream());
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        authentication();
-                        readMessages();
-                    } catch (IOException exception) {
-                        exception.printStackTrace();
-                    }
+            service.execute(() -> {
+                try {
+                    authentication();
+                    readMessages();
+                } catch (IOException exception) {
+                    exception.printStackTrace();
                 }
-            }).start();
+            });
         } catch (IOException exception) {
             throw new RuntimeException("Проблемы при создании обработчика");
         }
